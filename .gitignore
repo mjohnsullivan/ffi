@@ -1,0 +1,4 @@
+*.o
+*.dylib
+a.out
+.vscode/
