@@ -1,3 +1,6 @@
+primitives: primitives.o
+	 gcc -o a.out primitives.o
+
 primitives.o: primitives.c
 	 gcc -c primitives.c
 

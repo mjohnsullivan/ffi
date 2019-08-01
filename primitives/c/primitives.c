@@ -1,14 +1,15 @@
+#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include "primitives.h"
 
 int main()
 {
-    // struct SomeData someData;
-
     printf("3 + 5 = %d\n", sum(3, 5));
-    // someData = get_some_data(42);
-    // printf("Value of data in struct is %d\n", someData.some_int);
+    int *mult = multiply(3, 5);
+    printf("3 * 5 = %d\n", *mult);
+    free(mult);
+    int sub_num = 3;
+    printf("3 - 5 = %d\n", subtract(&sub_num, 5));
     return 0;
 }
 
@@ -17,12 +18,14 @@ int sum(int a, int b)
     return a + b;
 }
 
-/* 
-struct SomeData get_some_data(int some_int)
+int *multiply(int a, int b)
 {
-    struct SomeData some_data;
-    some_data.some_int = some_int;
-    // strcpy(some_data.some_str, "This is some data");
-    return some_data;
+    int *mult = (int *)malloc(sizeof(int));
+    *mult = a * b;
+    return mult;
 }
-*/
+
+int subtract(int *a, int b)
+{
+    return *a - b;
+}
