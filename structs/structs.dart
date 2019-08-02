@@ -6,11 +6,11 @@ class Utf8 extends ffi.Struct<Utf8> {
   @ffi.Uint8()
   int char;
 
-  static String fromUtf8(ffi.Pointer<Utf8> str) {
-    List<int> units = [];
-    int len = 0;
+  static String fromUtf8(ffi.Pointer<Utf8> ptr) {
+    final units = List<int>();
+    var len = 0;
     while (true) {
-      int char = str.elementAt(len++).load<Utf8>().char;
+      final char = ptr.elementAt(len++).load<Utf8>().char;
       if (char == 0) break;
       units.add(char);
     }
@@ -18,14 +18,14 @@ class Utf8 extends ffi.Struct<Utf8> {
   }
 
   static ffi.Pointer<Utf8> toUtf8(String s) {
-    List<int> units = Utf8Encoder().convert(s);
-    ffi.Pointer<Utf8> result =
-        ffi.Pointer<Utf8>.allocate(count: units.length + 1).cast();
-    for (int i = 0; i < units.length; i++) {
-      result.elementAt(i).load<Utf8>().char = units[i];
+    final units = Utf8Encoder().convert(s);
+    final ptr = ffi.Pointer<Utf8>.allocate(count: units.length + 1);
+    for (var i = 0; i < units.length; i++) {
+      ptr.elementAt(i).load<Utf8>().char = units[i];
     }
-    result.elementAt(units.length).load<Utf8>().char = 0;
-    return result;
+    // Add the C string null terminator '\0'
+    ptr.elementAt(units.length).load<Utf8>().char = 0;
+    return ptr;
   }
 }
 
@@ -59,8 +59,9 @@ class Place extends ffi.Struct<Place> {
 }
 
 // C string pointer return function - char *hello_world();
+// There's no need for two typedefs here, as both the
+// C and Dart functions have the same signature
 typedef hello_world_func = ffi.Pointer<Utf8> Function();
-typedef HelloWorld = ffi.Pointer<Utf8> Function();
 
 // C string parameter pointer function - char *reverse(char *str, int length);
 typedef reverse_func = ffi.Pointer<Utf8> Function(
@@ -84,7 +85,7 @@ main() {
 
   final helloWorldPointer =
       dylib.lookup<ffi.NativeFunction<hello_world_func>>('hello_world');
-  final helloWorld = helloWorldPointer.asFunction<HelloWorld>();
+  final helloWorld = helloWorldPointer.asFunction<hello_world_func>();
   final messagePointer = helloWorld();
   final message = Utf8.fromUtf8(messagePointer);
   print('$message');
