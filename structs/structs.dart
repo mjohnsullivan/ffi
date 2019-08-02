@@ -1,29 +1,5 @@
 import 'dart:convert';
 import 'dart:ffi' as ffi;
-/*
-class Place extends ffi.Struct {
-  @ffi.Double()
-  double latitude;
-  @ffi.Double()
-  double longitude;
-
-  external static int sizeOf();
-
-  @override
-  Place offsetBy(int offsetInBytes) => super.offsetBy(offsetInBytes).cast();
-
-  @override
-  Place elementAt(int index) => offsetBy(sizeOf() * index);
-
-  static Place allocate({int count: 1}) =>
-      ffi.allocate<ffi.Uint8>(count: count * sizeOf()).cast();
-
-  factory Place(int val) => Place.allocate()..someInt = val;
-}
-
-typedef some_Place_func = Place Function(ffi.Int32 some_int);
-typedef SomePlace = Place Function(int someInt);
-*/
 
 // Example of using structs to pass strings to and from Dart/C
 class Utf8 extends ffi.Struct<Utf8> {
@@ -53,15 +29,34 @@ class Utf8 extends ffi.Struct<Utf8> {
   }
 }
 
+// Example of handling a simple C struct
+class Coordinate extends ffi.Struct<Coordinate> {
+  @ffi.Double()
+  double latitude;
+
+  @ffi.Double()
+  double longitude;
+
+  factory Coordinate.allocate(double latitude, double longitude) =>
+      ffi.Pointer<Coordinate>.allocate().load<Coordinate>()
+        ..latitude = latitude
+        ..longitude = longitude;
+}
+
 // C string pointer return function - char *hello_world();
 typedef hello_world_func = ffi.Pointer<Utf8> Function();
 typedef HelloWorld = ffi.Pointer<Utf8> Function();
 
 // C string parameter pointer function - char *reverse(char *str, int length);
-// C string pointer return function - char *hello_world();
 typedef reverse_func = ffi.Pointer<Utf8> Function(
     ffi.Pointer<Utf8> str, ffi.Int32 length);
 typedef Reverse = ffi.Pointer<Utf8> Function(ffi.Pointer<Utf8> str, int length);
+
+// C struct pointer return function - struct Place *create_place(char *name, double latitude, double longitude);
+typedef create_coordinate_func = ffi.Pointer<Coordinate> Function(
+    ffi.Double latitude, ffi.Double longitude);
+typedef CreateCoordinate = ffi.Pointer<Coordinate> Function(
+    double latitude, double longitude);
 
 main() {
   final dylib = ffi.DynamicLibrary.open('structs.dylib');
@@ -77,4 +72,12 @@ main() {
   final reverse = reversePointer.asFunction<Reverse>();
   final reversedMessage = Utf8.fromUtf8(reverse(Utf8.toUtf8('backwards'), 9));
   print('$reversedMessage');
+
+  final createCoordinatePointer = dylib
+      .lookup<ffi.NativeFunction<create_coordinate_func>>('create_coordinate');
+  final createCoordinate =
+      createCoordinatePointer.asFunction<CreateCoordinate>();
+  final coordinatePointer = createCoordinate(1.0, 2.0);
+  final coordinate = coordinatePointer.load();
+  print('Coordinate: ${coordinate.latitude}, ${coordinate.longitude}');
 }
