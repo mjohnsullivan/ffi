@@ -17,6 +17,12 @@ typedef multiply_func = ffi.Pointer<ffi.Int32> Function(
     ffi.Int32 a, ffi.Int32 b);
 typedef Multiply = ffi.Pointer<ffi.Int32> Function(int a, int b);
 
+// C multi sum fuction - int multi_sum(int nr_count, ...);
+// Example of how to call C functions with varargs with a fixed arg count in Dart
+typedef multi_sum_func = ffi.Int32 Function(
+    ffi.Int32 numCount, ffi.Int32 a, ffi.Int32 b, ffi.Int32 c);
+typedef MultiSum = int Function(int numCount, int a, int b, int c);
+
 main() {
   final dylib = ffi.DynamicLibrary.open('primitives.dylib');
 
@@ -41,6 +47,21 @@ main() {
   final multiply = multiplyPointer.asFunction<Multiply>();
   final resultPointer = multiply(3, 5);
   // Fetch the result at the address pointed to
-  final result = resultPointer.load<int>();
+  final int result = resultPointer.load();
   print('3 * 5 = $result');
+
+  // example calling a C function with varargs
+  // calls int multi_sum(int nr_count, ...);
+  final multiSumPointer =
+      dylib.lookup<ffi.NativeFunction<multi_sum_func>>('multi_sum');
+  final multiSum = multiSumPointer.asFunction<MultiSum>();
+  print('3 + 7 + 11 = ${multiSum(3, 3, 7, 11)}');
+}
+
+ffi.Pointer<ffi.Int32> _createCIntArray(List<int> nums) {
+  final ptr = ffi.Pointer<ffi.Int32>.allocate(count: nums.length);
+  for (var i = 0; i < nums.length; i++) {
+    ptr.elementAt(i).store(nums[i]);
+  }
+  return ptr;
 }
